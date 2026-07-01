@@ -1,0 +1,1026 @@
+cat > /mnt/user-data/outputs/index.html << 'HTMLEOF'
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NovelForge — 物語創造の工房</title>
+<style>
+:root {
+  --bg-void:       #0f0f1a;
+  --bg-deep:       #1a1a2e;
+  --bg-surface:    #22223a;
+  --bg-raised:     #2a2a45;
+  --bg-panel:      #1e1e33;
+  --border-subtle: #33335a;
+  --border-mid:    #44447a;
+  --accent-amber:  #c9956c;
+  --accent-amber2: #e8b88a;
+  --accent-blue:   #6aabff;
+  --accent-green:  #5cb88a;
+  --accent-red:    #e06c6c;
+  --text-parchment:#e8dcc8;
+  --text-muted:    #9898b8;
+  --text-dim:      #6a6a8a;
+  --diff-add:      rgba(92,184,138,0.25);
+  --diff-del:      rgba(224,108,108,0.25);
+  --shadow-deep:   0 8px 32px rgba(0,0,0,0.6);
+  --shadow-pop:    0 2px 12px rgba(0,0,0,0.4);
+  --radius-sm:     4px;
+  --radius-md:     8px;
+  --radius-lg:     12px;
+  --font-body:     'Noto Serif JP','Georgia',serif;
+  --font-ui:       'Inter','Hiragino Sans',sans-serif;
+  --transition:    0.18s ease;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{font-family:var(--font-ui);background:var(--bg-void);color:var(--text-parchment);font-size:14px;line-height:1.5}
+#app{display:grid;grid-template-rows:48px 1fr;grid-template-columns:260px 1fr 280px;grid-template-areas:"topbar topbar topbar" "left center right";height:100vh;overflow:hidden}
+#topbar{grid-area:topbar;background:var(--bg-deep);border-bottom:1px solid var(--border-subtle);display:flex;align-items:center;padding:0 16px;gap:12px;z-index:100}
+.topbar-brand{font-size:16px;font-weight:700;color:var(--accent-amber);letter-spacing:.08em;font-family:var(--font-body);flex-shrink:0}
+.topbar-divider{width:1px;height:24px;background:var(--border-subtle);flex-shrink:0}
+.topbar-tabs{display:flex;gap:2px;background:var(--bg-surface);border-radius:var(--radius-md);padding:3px}
+.tab-btn{background:none;border:none;color:var(--text-muted);cursor:pointer;padding:5px 14px;border-radius:var(--radius-sm);font-size:12px;font-family:var(--font-ui);transition:var(--transition);white-space:nowrap}
+.tab-btn:hover{color:var(--text-parchment);background:var(--bg-raised)}
+.tab-btn.active{background:var(--accent-amber);color:#1a1a2e;font-weight:600}
+.topbar-spacer{flex:1}
+.topbar-actions{display:flex;gap:8px;align-items:center}
+.btn-icon{background:var(--bg-surface);border:1px solid var(--border-subtle);color:var(--text-muted);cursor:pointer;width:32px;height:32px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;font-size:15px;transition:var(--transition)}
+.btn-icon:hover{color:var(--text-parchment);border-color:var(--border-mid)}
+.btn-primary{background:var(--accent-amber);border:none;color:#1a1a2e;cursor:pointer;padding:6px 14px;border-radius:var(--radius-sm);font-size:12px;font-weight:700;font-family:var(--font-ui);transition:var(--transition)}
+.btn-primary:hover{background:var(--accent-amber2)}
+.wordcount-badge{font-size:11px;color:var(--text-dim);background:var(--bg-surface);padding:4px 10px;border-radius:var(--radius-sm);border:1px solid var(--border-subtle)}
+#left-panel{grid-area:left;background:var(--bg-panel);border-right:1px solid var(--border-subtle);display:flex;flex-direction:column;overflow:hidden}
+.panel-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px 8px;border-bottom:1px solid var(--border-subtle);flex-shrink:0}
+.panel-title{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--text-dim);font-weight:600}
+.panel-action{background:none;border:none;color:var(--accent-amber);cursor:pointer;font-size:18px;line-height:1;width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:var(--radius-sm);transition:var(--transition)}
+.panel-action:hover{background:var(--bg-raised)}
+.tree-scroll{flex:1;overflow-y:auto;padding:8px 0}
+.tree-scroll::-webkit-scrollbar{width:4px}
+.tree-scroll::-webkit-scrollbar-thumb{background:var(--border-subtle);border-radius:2px}
+.tree-chapter{margin:0 0 4px}
+.tree-chapter-header{display:flex;align-items:center;gap:6px;padding:6px 14px;cursor:pointer;border-radius:var(--radius-sm);transition:var(--transition);user-select:none}
+.tree-chapter-header:hover{background:var(--bg-raised)}
+.tree-toggle{font-size:10px;color:var(--text-dim);transition:var(--transition);width:12px;display:inline-block}
+.tree-toggle.open{transform:rotate(90deg)}
+.tree-chapter-icon{font-size:13px}
+.tree-chapter-name{flex:1;font-size:13px;color:var(--text-parchment);font-weight:500}
+.tree-chapter-count{font-size:10px;color:var(--text-dim)}
+.tree-scenes{padding-left:28px;display:none}
+.tree-scenes.open{display:block}
+.tree-scene{display:flex;align-items:center;gap:6px;padding:5px 10px;cursor:pointer;border-radius:var(--radius-sm);transition:var(--transition);border-left:2px solid transparent;margin:1px 0}
+.tree-scene:hover{background:var(--bg-raised)}
+.tree-scene.active{background:rgba(201,149,108,.1);border-left-color:var(--accent-amber)}
+.scene-dot{width:6px;height:6px;border-radius:50%;background:var(--border-mid);flex-shrink:0}
+.tree-scene.active .scene-dot{background:var(--accent-amber)}
+.tree-scene-name{font-size:12px;color:var(--text-muted);flex:1}
+.tree-scene.active .tree-scene-name{color:var(--text-parchment)}
+.tree-add-btn{display:flex;align-items:center;gap:6px;padding:5px 14px 5px 42px;cursor:pointer;color:var(--text-dim);font-size:11px;transition:var(--transition);border-radius:var(--radius-sm)}
+.tree-add-btn:hover{color:var(--accent-amber);background:var(--bg-raised)}
+#center-panel{grid-area:center;display:flex;flex-direction:column;background:var(--bg-deep);overflow:hidden;position:relative}
+.editor-toolbar{display:flex;align-items:center;gap:8px;padding:8px 16px;border-bottom:1px solid var(--border-subtle);flex-shrink:0;background:var(--bg-panel)}
+.scene-title-input{flex:1;background:none;border:none;color:var(--text-parchment);font-size:15px;font-weight:600;font-family:var(--font-body);outline:none}
+.scene-title-input::placeholder{color:var(--text-dim)}
+.tool-sep{width:1px;height:20px;background:var(--border-subtle);flex-shrink:0}
+.toolbar-btn{background:none;border:1px solid transparent;color:var(--text-muted);cursor:pointer;padding:4px 8px;border-radius:var(--radius-sm);font-size:12px;font-family:var(--font-ui);transition:var(--transition)}
+.toolbar-btn:hover{color:var(--text-parchment);border-color:var(--border-subtle)}
+.toolbar-btn.active{background:var(--bg-raised);color:var(--accent-amber);border-color:var(--border-mid)}
+.editor-area{flex:1;overflow-y:auto;padding:40px 60px;position:relative}
+.editor-area::-webkit-scrollbar{width:6px}
+.editor-area::-webkit-scrollbar-thumb{background:var(--border-subtle);border-radius:3px}
+.editor-area.focus-mode{background-image:linear-gradient(rgba(201,149,108,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(201,149,108,.04) 1px,transparent 1px);background-size:32px 32px}
+#editor{max-width:700px;margin:0 auto;min-height:100%;outline:none;font-family:var(--font-body);font-size:16px;line-height:2;color:var(--text-parchment);white-space:pre-wrap;word-break:break-all;caret-color:var(--accent-amber)}
+#editor:empty::before{content:attr(data-placeholder);color:var(--text-dim);pointer-events:none}
+#editor.vertical{writing-mode:vertical-rl;text-orientation:upright;max-width:none;max-height:600px;width:100%;line-height:2}
+.char-link,.place-link{cursor:pointer;border-bottom:1px dotted;position:relative;transition:var(--transition)}
+.char-link{color:var(--accent-amber);border-color:var(--accent-amber)}
+.place-link{color:var(--accent-blue);border-color:var(--accent-blue)}
+#right-panel{grid-area:right;background:var(--bg-panel);border-left:1px solid var(--border-subtle);display:flex;flex-direction:column;overflow:hidden}
+.inspector-tabs{display:flex;border-bottom:1px solid var(--border-subtle);flex-shrink:0}
+.insp-tab{flex:1;background:none;border:none;color:var(--text-muted);cursor:pointer;padding:10px 6px;font-size:11px;font-family:var(--font-ui);border-bottom:2px solid transparent;transition:var(--transition);text-align:center}
+.insp-tab:hover{color:var(--text-parchment)}
+.insp-tab.active{color:var(--accent-amber);border-bottom-color:var(--accent-amber)}
+.inspector-body{flex:1;overflow-y:auto;padding:14px;display:none}
+.inspector-body.active{display:block}
+.inspector-body::-webkit-scrollbar{width:4px}
+.inspector-body::-webkit-scrollbar-thumb{background:var(--border-subtle);border-radius:2px}
+.insp-section{margin-bottom:18px}
+.insp-label{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-dim);margin-bottom:6px;font-weight:600}
+.insp-textarea{width:100%;background:var(--bg-surface);border:1px solid var(--border-subtle);color:var(--text-parchment);border-radius:var(--radius-sm);padding:8px;font-size:12px;font-family:var(--font-body);line-height:1.6;resize:vertical;min-height:80px;outline:none;transition:var(--transition)}
+.insp-textarea:focus{border-color:var(--border-mid)}
+.cut-pool{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius-sm);overflow:hidden}
+.cut-pool-header{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-bottom:1px solid var(--border-subtle);background:var(--bg-raised)}
+.cut-pool-header span{font-size:11px;color:var(--text-muted)}
+.cut-items{padding:6px;display:flex;flex-direction:column;gap:4px}
+.cut-item{background:var(--bg-deep);border:1px solid var(--border-subtle);border-radius:var(--radius-sm);padding:6px 8px;font-size:11px;color:var(--text-muted);font-family:var(--font-body);line-height:1.5;cursor:pointer;transition:var(--transition)}
+.cut-item:hover{border-color:var(--accent-amber);color:var(--text-parchment)}
+.char-card{display:flex;align-items:center;gap:8px;padding:8px;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius-sm);margin-bottom:6px;cursor:pointer;transition:var(--transition)}
+.char-card:hover{border-color:var(--accent-amber)}
+.char-avatar{width:32px;height:32px;border-radius:50%;background:var(--bg-raised);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;border:1px solid var(--border-mid)}
+.char-info{flex:1;min-width:0}
+.char-name{font-size:12px;font-weight:600;color:var(--text-parchment)}
+.char-role{font-size:10px;color:var(--text-dim)}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);z-index:1000;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal{background:var(--bg-surface);border:1px solid var(--border-mid);border-radius:var(--radius-lg);box-shadow:var(--shadow-deep);width:600px;max-width:95vw;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;transform:translateY(12px);transition:transform .2s}
+.modal-overlay.open .modal{transform:translateY(0)}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border-subtle);flex-shrink:0}
+.modal-title{font-size:15px;font-weight:700;color:var(--text-parchment)}
+.modal-close{background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:20px;line-height:1;transition:var(--transition)}
+.modal-close:hover{color:var(--text-parchment)}
+.modal-body{flex:1;overflow-y:auto;padding:20px}
+.modal-footer{display:flex;gap:8px;justify-content:flex-end;padding:14px 20px;border-top:1px solid var(--border-subtle);flex-shrink:0}
+.form-row{margin-bottom:14px}
+.form-label{display:block;font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px;font-weight:600}
+.form-input{width:100%;background:var(--bg-raised);border:1px solid var(--border-subtle);color:var(--text-parchment);border-radius:var(--radius-sm);padding:8px 10px;font-size:13px;font-family:var(--font-ui);outline:none;transition:var(--transition)}
+.form-input:focus{border-color:var(--accent-amber)}
+.form-textarea{width:100%;background:var(--bg-raised);border:1px solid var(--border-subtle);color:var(--text-parchment);border-radius:var(--radius-sm);padding:8px 10px;font-size:13px;font-family:var(--font-body);line-height:1.6;resize:vertical;min-height:100px;outline:none;transition:var(--transition)}
+.form-textarea:focus{border-color:var(--accent-amber)}
+.btn-secondary{background:var(--bg-raised);border:1px solid var(--border-subtle);color:var(--text-muted);cursor:pointer;padding:7px 16px;border-radius:var(--radius-sm);font-size:12px;font-family:var(--font-ui);transition:var(--transition)}
+.btn-secondary:hover{color:var(--text-parchment);border-color:var(--border-mid)}
+.btn-danger{background:rgba(224,108,108,.15);border:1px solid rgba(224,108,108,.3);color:var(--accent-red);cursor:pointer;padding:7px 16px;border-radius:var(--radius-sm);font-size:12px;font-family:var(--font-ui);transition:var(--transition)}
+.btn-danger:hover{background:rgba(224,108,108,.25)}
+#entity-popup{position:fixed;background:var(--bg-surface);border:1px solid var(--border-mid);border-radius:var(--radius-md);box-shadow:var(--shadow-deep);padding:12px 14px;width:240px;pointer-events:none;z-index:500;opacity:0;transition:opacity .15s;font-size:12px}
+#entity-popup.visible{opacity:1}
+.popup-type{font-size:9px;text-transform:uppercase;letter-spacing:.12em;color:var(--text-dim);margin-bottom:4px}
+.popup-name{font-size:14px;font-weight:700;color:var(--text-parchment);margin-bottom:6px;font-family:var(--font-body)}
+.popup-desc{color:var(--text-muted);line-height:1.5;font-family:var(--font-body)}
+#timeline-view{position:absolute;inset:0;background:var(--bg-deep);display:none;flex-direction:column;overflow:hidden}
+#timeline-view.active{display:flex}
+.timeline-header{padding:14px 20px;border-bottom:1px solid var(--border-subtle);display:flex;align-items:center;gap:12px;flex-shrink:0}
+.timeline-title{font-size:15px;font-weight:700}
+.timeline-hint{font-size:11px;color:var(--text-dim)}
+.timeline-container{flex:1;overflow:auto}
+.timeline-container::-webkit-scrollbar{width:6px;height:6px}
+.timeline-container::-webkit-scrollbar-thumb{background:var(--border-subtle);border-radius:3px}
+.timeline-grid{position:relative;min-width:1200px;padding:20px}
+.timeline-axis-x{display:flex;padding-left:120px;margin-bottom:4px}
+.tl-day{width:120px;flex-shrink:0;text-align:center;font-size:10px;color:var(--text-dim);border-left:1px solid var(--border-subtle);padding:4px 0}
+.timeline-rows{position:relative}
+.timeline-row{display:flex;align-items:center;min-height:80px;border-bottom:1px solid var(--border-subtle);position:relative}
+.tl-char-label{width:120px;flex-shrink:0;font-size:12px;color:var(--text-muted);padding:0 10px;font-weight:600}
+.tl-cells{flex:1;position:relative;display:flex}
+.tl-cell{width:120px;height:80px;flex-shrink:0;border-left:1px dashed var(--border-subtle);position:relative}
+.scene-card{position:absolute;background:var(--bg-raised);border:1px solid var(--border-mid);border-radius:var(--radius-sm);padding:4px 8px;font-size:10px;cursor:grab;transition:border-color var(--transition),box-shadow var(--transition);width:108px;top:8px;left:4px;user-select:none}
+.scene-card:hover{border-color:var(--accent-amber)}
+.scene-card-title{color:var(--text-parchment);font-weight:600;margin-bottom:2px}
+.scene-card-ch{color:var(--text-dim)}
+.scene-card.foreshadow{border-left:3px solid var(--accent-amber)}
+.scene-card.payoff{border-left:3px solid var(--accent-green)}
+#foreshadow-svg{position:absolute;inset:0;pointer-events:none;z-index:10}
+#database-view{position:absolute;inset:0;background:var(--bg-deep);display:none;flex-direction:column;overflow:hidden}
+#database-view.active{display:flex}
+.db-toolbar{display:flex;align-items:center;gap:10px;padding:12px 20px;border-bottom:1px solid var(--border-subtle);flex-shrink:0}
+.db-filter{display:flex;gap:4px;background:var(--bg-surface);border-radius:var(--radius-md);padding:3px}
+.db-filter-btn{background:none;border:none;color:var(--text-muted);cursor:pointer;padding:5px 12px;border-radius:var(--radius-sm);font-size:12px;font-family:var(--font-ui);transition:var(--transition)}
+.db-filter-btn:hover{color:var(--text-parchment)}
+.db-filter-btn.active{background:var(--bg-raised);color:var(--accent-amber)}
+.db-grid{flex:1;overflow-y:auto;padding:20px;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;align-content:start}
+.db-grid::-webkit-scrollbar{width:6px}
+.db-grid::-webkit-scrollbar-thumb{background:var(--border-subtle);border-radius:3px}
+.entity-card{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:14px;cursor:pointer;transition:var(--transition)}
+.entity-card:hover{border-color:var(--border-mid);transform:translateY(-1px);box-shadow:var(--shadow-pop)}
+.entity-card-type{font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-dim);margin-bottom:6px;font-weight:600}
+.entity-card-type.character{color:var(--accent-amber)}
+.entity-card-type.place{color:var(--accent-blue)}
+.entity-card-name{font-size:15px;font-weight:700;color:var(--text-parchment);font-family:var(--font-body);margin-bottom:6px}
+.entity-card-desc{font-size:11px;color:var(--text-muted);line-height:1.5;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.entity-card-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+.entity-tag{background:var(--bg-raised);border:1px solid var(--border-subtle);color:var(--text-dim);font-size:9px;padding:2px 6px;border-radius:10px}
+#version-view{position:absolute;inset:0;background:var(--bg-deep);display:none;flex-direction:column;overflow:hidden}
+#version-view.active{display:flex}
+.version-layout{display:grid;grid-template-columns:240px 1fr;flex:1;overflow:hidden}
+.version-sidebar{background:var(--bg-panel);border-right:1px solid var(--border-subtle);overflow-y:auto;padding:12px 0}
+.version-sidebar::-webkit-scrollbar{width:4px}
+.version-sidebar::-webkit-scrollbar-thumb{background:var(--border-subtle);border-radius:2px}
+.version-item{padding:10px 14px;cursor:pointer;border-left:3px solid transparent;transition:var(--transition);border-bottom:1px solid var(--border-subtle)}
+.version-item:hover{background:var(--bg-raised)}
+.version-item.active{border-left-color:var(--accent-amber);background:rgba(201,149,108,.08)}
+.version-label{font-size:13px;font-weight:600;color:var(--text-parchment)}
+.version-date{font-size:10px;color:var(--text-dim);margin-top:2px}
+.version-note{font-size:11px;color:var(--text-muted);margin-top:4px}
+.diff-panel{overflow-y:auto;padding:30px 40px;font-family:var(--font-body);font-size:15px;line-height:2;color:var(--text-parchment)}
+.diff-panel::-webkit-scrollbar{width:6px}
+.diff-panel::-webkit-scrollbar-thumb{background:var(--border-subtle);border-radius:3px}
+.diff-add{background:var(--diff-add);border-radius:2px;color:var(--accent-green)}
+.diff-del{background:var(--diff-del);border-radius:2px;color:var(--accent-red);text-decoration:line-through}
+#statusbar{position:fixed;bottom:0;left:0;right:0;height:24px;background:var(--bg-void);border-top:1px solid var(--border-subtle);display:flex;align-items:center;gap:16px;padding:0 16px;z-index:200;font-size:10px;color:var(--text-dim)}
+.status-item{display:flex;align-items:center;gap:4px}
+.status-dot{width:6px;height:6px;border-radius:50%;background:var(--accent-green)}
+#notifications{position:fixed;top:60px;right:16px;z-index:2000;display:flex;flex-direction:column;gap:6px}
+.notif{background:var(--bg-surface);border:1px solid var(--border-mid);border-radius:var(--radius-sm);padding:8px 14px;font-size:12px;color:var(--text-parchment);box-shadow:var(--shadow-pop);animation:slideIn .2s ease;max-width:300px}
+.notif.success{border-left:3px solid var(--accent-green)}
+.notif.info{border-left:3px solid var(--accent-blue)}
+@keyframes slideIn{from{transform:translateX(20px);opacity:0}to{transform:translateX(0);opacity:1}}
+.snapshot-meta{background:var(--bg-raised);border-radius:var(--radius-sm);padding:12px;margin-top:10px}
+.snapshot-stat{display:flex;justify-content:space-between;margin-bottom:4px;font-size:12px}
+.snapshot-stat-key{color:var(--text-muted)}
+.snapshot-stat-val{color:var(--text-parchment);font-weight:600}
+::selection{background:rgba(201,149,108,.3)}
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<div id="app">
+  <div id="topbar">
+    <span class="topbar-brand">✒ NovelForge</span>
+    <div class="topbar-divider"></div>
+    <div class="topbar-tabs">
+      <button class="tab-btn active" data-view="editor" onclick="switchView('editor')">✍ 執筆</button>
+      <button class="tab-btn" data-view="timeline" onclick="switchView('timeline')">📅 タイムライン</button>
+      <button class="tab-btn" data-view="database" onclick="switchView('database')">🗃 設定DB</button>
+      <button class="tab-btn" data-view="version" onclick="switchView('version')">🕐 バージョン</button>
+    </div>
+    <div class="topbar-spacer"></div>
+    <div class="topbar-actions">
+      <div class="wordcount-badge" id="wordcount-badge">0 文字</div>
+      <button class="btn-icon" title="フォーカスモード" onclick="toggleFocus()">🎯</button>
+      <button class="btn-icon" title="縦書き切替" onclick="toggleVertical()">⏩</button>
+      <button class="btn-primary" onclick="openSaveModal()">💾 スナップショット</button>
+    </div>
+  </div>
+
+  <div id="left-panel">
+    <div class="panel-header">
+      <span class="panel-title">構成ツリー</span>
+      <button class="panel-action" onclick="addChapter()">＋</button>
+    </div>
+    <div class="tree-scroll" id="tree-root"></div>
+  </div>
+
+  <div id="center-panel">
+    <div id="editor-view" style="display:flex;flex-direction:column;flex:1;overflow:hidden;">
+      <div class="editor-toolbar">
+        <input type="text" class="scene-title-input" id="scene-title-input" placeholder="シーンタイトル…" oninput="updateSceneTitle(this.value)">
+        <div class="tool-sep"></div>
+        <button class="toolbar-btn" id="focus-btn" onclick="toggleFocus()">📄 フォーカス</button>
+        <button class="toolbar-btn" id="vertical-btn" onclick="toggleVertical()">縦書</button>
+        <div class="tool-sep"></div>
+        <button class="toolbar-btn" onclick="processLinks()">🔗 リンク化</button>
+      </div>
+      <div class="editor-area" id="editor-area">
+        <div id="editor" contenteditable="true" oninput="onEditorInput()" spellcheck="false" data-placeholder="執筆を始めてください。@キャラクター名 や #地名 で自動リンクされます…"></div>
+      </div>
+    </div>
+
+    <div id="timeline-view">
+      <div class="timeline-header">
+        <span class="timeline-title">📅 タイムライン</span>
+        <span class="timeline-hint">ドラッグで日時変更 / 橙=伏線 緑=回収</span>
+        <div style="flex:1"></div>
+        <button class="btn-primary" onclick="openForeshadowModal()">✦ 伏線を紐付け</button>
+      </div>
+      <div class="timeline-container" id="timeline-container">
+        <div class="timeline-grid" id="timeline-grid"></div>
+      </div>
+    </div>
+
+    <div id="database-view">
+      <div class="db-toolbar">
+        <div class="db-filter">
+          <button class="db-filter-btn active" data-filter="all" onclick="filterDB('all')">すべて</button>
+          <button class="db-filter-btn" data-filter="character" onclick="filterDB('character')">キャラクター</button>
+          <button class="db-filter-btn" data-filter="place" onclick="filterDB('place')">場所</button>
+          <button class="db-filter-btn" data-filter="item" onclick="filterDB('item')">アイテム</button>
+        </div>
+        <div style="flex:1"></div>
+        <button class="btn-primary" onclick="openEntityModal()">＋ 新規追加</button>
+      </div>
+      <div class="db-grid" id="db-grid"></div>
+    </div>
+
+    <div id="version-view">
+      <div class="version-layout">
+        <div class="version-sidebar" id="version-sidebar">
+          <div style="padding:10px 14px 6px;font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-dim);">保存済みバージョン</div>
+        </div>
+        <div class="diff-panel" id="diff-panel">
+          <div style="color:var(--text-dim);font-size:13px;text-align:center;padding-top:60px;">左のリストからバージョンを選んで比較してください</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="right-panel">
+    <div class="inspector-tabs">
+      <button class="insp-tab active" data-insp="memo" onclick="switchInspector('memo')">メモ</button>
+      <button class="insp-tab" data-insp="pool" onclick="switchInspector('pool')">没ネタ</button>
+      <button class="insp-tab" data-insp="chars" onclick="switchInspector('chars')">人物</button>
+    </div>
+    <div class="inspector-body active" id="insp-memo">
+      <div class="insp-section">
+        <div class="insp-label">シーンメモ</div>
+        <textarea class="insp-textarea" id="scene-memo" rows="5" placeholder="このシーンの意図、雰囲気…" oninput="saveSceneMemo(this.value)"></textarea>
+      </div>
+      <div class="insp-section">
+        <div class="insp-label">視点人物</div>
+        <input type="text" class="form-input" id="scene-pov" placeholder="例: アリア" style="font-size:12px;" oninput="saveScenePov(this.value)">
+      </div>
+      <div class="insp-section">
+        <div class="insp-label">作中日時</div>
+        <input type="text" class="form-input" id="scene-datetime" placeholder="例: 3年目 春 第7日" style="font-size:12px;" oninput="saveSceneDatetime(this.value)">
+      </div>
+      <div class="insp-section">
+        <div class="insp-label">場所</div>
+        <input type="text" class="form-input" id="scene-location" placeholder="例: 王都 大聖堂" style="font-size:12px;" oninput="saveSceneLocation(this.value)">
+      </div>
+    </div>
+    <div class="inspector-body" id="insp-pool">
+      <div class="insp-section">
+        <div class="insp-label">テキストを選択して没にする</div>
+        <button class="btn-primary" style="width:100%;margin-bottom:10px;font-size:12px;" onclick="cutToPool()">✂ 選択テキストを没にする</button>
+        <div class="cut-pool">
+          <div class="cut-pool-header"><span>没ネタプール</span></div>
+          <div class="cut-items" id="cut-items"><div style="font-size:11px;color:var(--text-dim);padding:8px;text-align:center;">没にしたテキストがここに貯まります</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="inspector-body" id="insp-chars">
+      <div class="insp-section">
+        <button class="btn-primary" style="width:100%;margin-bottom:10px;font-size:12px;" onclick="openEntityModal('character')">＋ キャラクター追加</button>
+        <div id="inspector-chars-list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="statusbar">
+  <div class="status-item"><div class="status-dot"></div><span>自動保存</span></div>
+  <div class="status-item" id="status-scene">シーン: —</div>
+  <div class="status-item" id="status-chars">キャラクター: 0</div>
+  <div class="status-item" id="status-versions">バージョン: 0</div>
+</div>
+
+<div id="entity-popup">
+  <div class="popup-type" id="popup-type"></div>
+  <div class="popup-name" id="popup-name"></div>
+  <div class="popup-desc" id="popup-desc"></div>
+</div>
+
+<!-- Entity Modal -->
+<div class="modal-overlay" id="entity-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="entity-modal-title">エンティティを編集</span>
+      <button class="modal-close" onclick="closeModal('entity-modal')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="entity-id">
+      <div class="form-row"><label class="form-label">種別</label><select class="form-input" id="entity-type"><option value="character">キャラクター</option><option value="place">場所</option><option value="item">アイテム</option></select></div>
+      <div class="form-row"><label class="form-label">名前</label><input type="text" class="form-input" id="entity-name" placeholder="例: アリア・シルバー"></div>
+      <div class="form-row"><label class="form-label">別名（カンマ区切り）</label><input type="text" class="form-input" id="entity-aliases" placeholder="例: シルバー将軍, 銀の剣士"></div>
+      <div class="form-row"><label class="form-label">概要（ホバー表示）</label><textarea class="form-textarea" id="entity-summary" rows="3" placeholder="簡単な紹介"></textarea></div>
+      <div class="form-row"><label class="form-label">詳細メモ</label><textarea class="form-textarea" id="entity-detail" rows="4" placeholder="外見、性格、背景など"></textarea></div>
+      <div class="form-row"><label class="form-label">タグ（カンマ区切り）</label><input type="text" class="form-input" id="entity-tags" placeholder="例: 主人公, 魔法使い"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-danger" id="entity-delete-btn" onclick="deleteEntity()" style="display:none;">削除</button>
+      <button class="btn-secondary" onclick="closeModal('entity-modal')">キャンセル</button>
+      <button class="btn-primary" onclick="saveEntity()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Save Modal -->
+<div class="modal-overlay" id="save-modal">
+  <div class="modal" style="width:460px">
+    <div class="modal-header">
+      <span class="modal-title">💾 スナップショット保存</span>
+      <button class="modal-close" onclick="closeModal('save-modal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row"><label class="form-label">バージョン名</label><input type="text" class="form-input" id="snapshot-label" placeholder="例: 第2章 完成"></div>
+      <div class="form-row"><label class="form-label">メモ</label><textarea class="form-textarea" id="snapshot-note" rows="3" placeholder="このバージョンについて（任意）"></textarea></div>
+      <div class="snapshot-meta" id="snapshot-meta"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('save-modal')">キャンセル</button>
+      <button class="btn-primary" onclick="saveSnapshot()">保存する</button>
+    </div>
+  </div>
+</div>
+
+<!-- Foreshadow Modal -->
+<div class="modal-overlay" id="foreshadow-modal">
+  <div class="modal" style="width:500px">
+    <div class="modal-header">
+      <span class="modal-title">✦ 伏線の紐付け</span>
+      <button class="modal-close" onclick="closeModal('foreshadow-modal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row"><label class="form-label">伏線を設置するシーン</label><select class="form-input" id="fs-scene-from"></select></div>
+      <div class="form-row"><label class="form-label">伏線を回収するシーン</label><select class="form-input" id="fs-scene-to"></select></div>
+      <div class="form-row"><label class="form-label">伏線の内容</label><input type="text" class="form-input" id="fs-label" placeholder="例: 銀の指輪の正体"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('foreshadow-modal')">キャンセル</button>
+      <button class="btn-primary" onclick="addForeshadow()">紐付け追加</button>
+    </div>
+  </div>
+</div>
+
+<div id="notifications"></div>
+
+<script>
+// ============================================================
+// DATA STORE
+// ============================================================
+let store={chapters:[],entities:[],foreshadows:[],cutPool:[],snapshots:[],currentSceneId:null,activeView:'editor'};
+
+function genId(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+
+function saveStore(){try{localStorage.setItem('novelforge_v2',JSON.stringify(store))}catch(e){console.warn('save failed',e)}}
+
+function loadStore(){
+  try{
+    const raw=localStorage.getItem('novelforge_v2');
+    if(raw){store=JSON.parse(raw);return}
+  }catch(e){}
+  initDefaultStore();
+}
+
+function initDefaultStore(){
+  const ch1={id:genId(),title:'第一章 始まりの日',scenes:[]};
+  const sc1={id:genId(),title:'プロローグ',content:'物語はここから始まる。\n\n@アリア は静かな朝の#王都広場 に立っていた。',memo:'',pov:'アリア',datetime:'1年目 春 第1日',location:'王都広場'};
+  const sc2={id:genId(),title:'運命の出会い',content:'',memo:'',pov:'',datetime:'',location:''};
+  ch1.scenes.push(sc1,sc2);
+  const ch2={id:genId(),title:'第二章 試練',scenes:[]};
+  const sc3={id:genId(),title:'旅立ち',content:'',memo:'',pov:'',datetime:'1年目 春 第10日',location:''};
+  ch2.scenes.push(sc3);
+  store.chapters=[ch1,ch2];
+  store.currentSceneId=sc1.id;
+  store.entities=[
+    {id:genId(),type:'character',name:'アリア',aliases:'アリア・シルバー',summary:'主人公。銀髪の若き魔法使い。正義感が強く、時に無謀。師匠を探して旅に出る。',detail:'18歳。銀色の髪と青い瞳。魔法学院を首席で卒業。',tags:'主人公,魔法使い'},
+    {id:genId(),type:'character',name:'レオン',aliases:'レオン・アークス',summary:'剣士。アリアのライバル兼相棒。口は悪いが情に厚い。',detail:'20歳。黒髪。元騎士団員。',tags:'サブキャラ,剣士'},
+    {id:genId(),type:'place',name:'王都広場',aliases:'',summary:'王国の首都の中心にある大広場。噴水と花時計が名物。',detail:'石畳の広場。半径200m。市が週3回開かれる。',tags:'王都,広場'},
+    {id:genId(),type:'place',name:'魔法学院',aliases:'学院',summary:'王都西端に位置する魔法使いの育成機関。創立300年以上の歴史を持つ。',detail:'7つの塔からなる複合建築。アリアはここを卒業した。',tags:'王都,施設'},
+  ];
+  store.foreshadows=[];store.cutPool=[];store.snapshots=[];
+}
+
+// ============================================================
+// VIEW
+// ============================================================
+function switchView(view){
+  store.activeView=view;
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.view===view));
+  document.getElementById('editor-view').style.display=view==='editor'?'flex':'none';
+  ['timeline','database','version'].forEach(v=>{
+    document.getElementById(v+'-view').classList.toggle('active',v===view);
+  });
+  if(view==='timeline')renderTimeline();
+  if(view==='database')renderDatabase();
+  if(view==='version')renderVersionSidebar();
+  saveStore();
+}
+
+// ============================================================
+// TREE
+// ============================================================
+function renderTree(){
+  const root=document.getElementById('tree-root');
+  root.innerHTML='';
+  store.chapters.forEach(ch=>{
+    const chDiv=document.createElement('div');
+    chDiv.className='tree-chapter';
+    chDiv.innerHTML=`
+      <div class="tree-chapter-header" onclick="toggleChapter(this)">
+        <span class="tree-toggle open">▶</span>
+        <span class="tree-chapter-icon">📖</span>
+        <span class="tree-chapter-name" ondblclick="renameChapter('${ch.id}',this)">${esc(ch.title)}</span>
+        <span class="tree-chapter-count">${ch.scenes.length}</span>
+      </div>
+      <div class="tree-scenes open" id="scenes-${ch.id}">
+        ${ch.scenes.map(sc=>`
+          <div class="tree-scene ${sc.id===store.currentSceneId?'active':''}"
+               onclick="selectScene('${sc.id}')"
+               draggable="true"
+               ondragstart="treeDragStart(event,'${sc.id}','${ch.id}')"
+               ondragover="treeDragOver(event)"
+               ondrop="treeDrop(event,'${sc.id}','${ch.id}')">
+            <div class="scene-dot"></div>
+            <span class="tree-scene-name" ondblclick="renameScene('${sc.id}',this)">${esc(sc.title)}</span>
+          </div>`).join('')}
+        <div class="tree-add-btn" onclick="addScene('${ch.id}')">＋ シーンを追加</div>
+      </div>`;
+    root.appendChild(chDiv);
+  });
+  document.getElementById('status-scene').textContent='シーン: '+store.chapters.reduce((a,c)=>a+c.scenes.length,0);
+}
+
+function toggleChapter(h){
+  const s=h.nextElementSibling,t=h.querySelector('.tree-toggle');
+  s.classList.toggle('open');t.classList.toggle('open',s.classList.contains('open'));
+}
+
+function renameChapter(id,el){
+  const ch=store.chapters.find(c=>c.id===id);if(!ch)return;
+  const inp=document.createElement('input');inp.value=ch.title;inp.className='form-input';inp.style.cssText='font-size:12px;padding:2px 6px;height:24px;';
+  el.replaceWith(inp);inp.focus();inp.select();
+  const done=()=>{ch.title=inp.value.trim()||ch.title;saveStore();renderTree()};
+  inp.addEventListener('blur',done);inp.addEventListener('keydown',e=>{if(e.key==='Enter')done()});
+}
+
+function renameScene(id,el){
+  const sc=findScene(id);if(!sc)return;
+  const inp=document.createElement('input');inp.value=sc.title;inp.className='form-input';inp.style.cssText='font-size:11px;padding:2px 6px;height:22px;flex:1;';
+  el.replaceWith(inp);inp.focus();inp.select();
+  const done=()=>{
+    sc.title=inp.value.trim()||sc.title;
+    if(id===store.currentSceneId)document.getElementById('scene-title-input').value=sc.title;
+    saveStore();renderTree();
+  };
+  inp.addEventListener('blur',done);inp.addEventListener('keydown',e=>{if(e.key==='Enter')done()});
+}
+
+function addChapter(){
+  store.chapters.push({id:genId(),title:`第${store.chapters.length+1}章`,scenes:[]});
+  saveStore();renderTree();notify('章を追加しました','success');
+}
+
+function addScene(chId){
+  const ch=store.chapters.find(c=>c.id===chId);if(!ch)return;
+  const sc={id:genId(),title:'新しいシーン',content:'',memo:'',pov:'',datetime:'',location:''};
+  ch.scenes.push(sc);selectScene(sc.id);saveStore();renderTree();
+}
+
+// Drag & Drop Tree
+let dragSceneId=null,dragChapterId=null;
+function treeDragStart(e,sid,cid){dragSceneId=sid;dragChapterId=cid;e.dataTransfer.effectAllowed='move'}
+function treeDragOver(e){e.preventDefault();e.dataTransfer.dropEffect='move'}
+function treeDrop(e,tid,tcid){
+  e.preventDefault();if(!dragSceneId||dragSceneId===tid)return;
+  const sc2=store.chapters.find(c=>c.id===dragChapterId);
+  const dc=store.chapters.find(c=>c.id===tcid);
+  if(!sc2||!dc)return;
+  const si=sc2.scenes.findIndex(s=>s.id===dragSceneId);
+  const[sc]=sc2.scenes.splice(si,1);
+  const di=dc.scenes.findIndex(s=>s.id===tid);
+  dc.scenes.splice(di,0,sc);
+  dragSceneId=null;dragChapterId=null;
+  saveStore();renderTree();
+}
+
+// ============================================================
+// SCENE / EDITOR
+// ============================================================
+function selectScene(id){
+  store.currentSceneId=id;
+  const sc=findScene(id);if(!sc)return;
+  const ed=document.getElementById('editor');
+  ed.innerHTML=renderEditorHTML(sc.content||'');
+  document.getElementById('scene-title-input').value=sc.title;
+  document.getElementById('scene-memo').value=sc.memo||'';
+  document.getElementById('scene-pov').value=sc.pov||'';
+  document.getElementById('scene-datetime').value=sc.datetime||'';
+  document.getElementById('scene-location').value=sc.location||'';
+  updateWordCount();renderTree();saveStore();
+}
+
+function findScene(id){
+  for(const ch of store.chapters){const sc=ch.scenes.find(s=>s.id===id);if(sc)return sc}
+  return null;
+}
+
+function getCurrentScene(){return findScene(store.currentSceneId)}
+function updateSceneTitle(v){const sc=getCurrentScene();if(sc){sc.title=v;renderTree();autoSave()}}
+function saveSceneMemo(v){const sc=getCurrentScene();if(sc){sc.memo=v;autoSave()}}
+function saveScenePov(v){const sc=getCurrentScene();if(sc){sc.pov=v;autoSave()}}
+function saveSceneDatetime(v){const sc=getCurrentScene();if(sc){sc.datetime=v;autoSave()}}
+function saveSceneLocation(v){const sc=getCurrentScene();if(sc){sc.location=v;autoSave()}}
+
+let _saveTimer=null;
+function autoSave(){clearTimeout(_saveTimer);_saveTimer=setTimeout(saveStore,800)}
+
+function onEditorInput(){
+  const sc=getCurrentScene();if(!sc)return;
+  sc.content=document.getElementById('editor').innerText;
+  updateWordCount();autoSave();
+}
+
+function updateWordCount(){
+  const t=document.getElementById('editor').innerText||'';
+  document.getElementById('wordcount-badge').textContent=t.replace(/\s/g,'').length.toLocaleString()+' 文字';
+}
+
+// ============================================================
+// LINKS
+// ============================================================
+function renderEditorHTML(text){
+  return esc(text)
+    .replace(/@([\u3040-\u9FFF\u30A0-\u30FFa-zA-Z0-9_·・]+)/g,(_,n)=>
+      `<span class="char-link" onmouseenter="showPopup(event,'${n}')" onmouseleave="hidePopup()">@${esc(n)}</span>`)
+    .replace(/#([\u3040-\u9FFF\u30A0-\u30FFa-zA-Z0-9_·・]+)/g,(_,n)=>
+      `<span class="place-link" onmouseenter="showPopup(event,'${n}')" onmouseleave="hidePopup()">&#35;${esc(n)}</span>`);
+}
+
+function processLinks(){
+  const ed=document.getElementById('editor');
+  const text=ed.innerText;
+  ed.innerHTML=renderEditorHTML(text);
+  placeCaretAtEnd(ed);
+  notify('リンク化しました','info');
+}
+
+function placeCaretAtEnd(el){
+  el.focus();
+  const r=document.createRange();r.selectNodeContents(el);r.collapse(false);
+  const s=window.getSelection();s.removeAllRanges();s.addRange(r);
+}
+
+// ============================================================
+// POPUP
+// ============================================================
+let _popTimer=null;
+function showPopup(e,name){
+  clearTimeout(_popTimer);
+  const en=store.entities.find(x=>x.name===name||(x.aliases||'').split(',').map(a=>a.trim()).includes(name));
+  const p=document.getElementById('entity-popup');
+  document.getElementById('popup-type').textContent=en?(en.type==='character'?'キャラクター':en.type==='place'?'場所':'アイテム'):'未登録';
+  document.getElementById('popup-name').textContent=en?en.name:name;
+  document.getElementById('popup-desc').textContent=en?(en.summary||'（概要未設定）'):'設定DBに登録されていません。';
+  p.style.left=Math.min(e.clientX+12,window.innerWidth-260)+'px';
+  p.style.top=Math.min(e.clientY+8,window.innerHeight-140)+'px';
+  p.classList.add('visible');
+}
+function hidePopup(){_popTimer=setTimeout(()=>document.getElementById('entity-popup').classList.remove('visible'),200)}
+
+// ============================================================
+// FOCUS / VERTICAL
+// ============================================================
+function toggleFocus(){
+  const a=document.getElementById('editor-area'),b=document.getElementById('focus-btn');
+  b.classList.toggle('active',a.classList.toggle('focus-mode'));
+}
+function toggleVertical(){
+  const ed=document.getElementById('editor'),b=document.getElementById('vertical-btn');
+  const on=ed.classList.toggle('vertical');
+  b.classList.toggle('active',on);
+  notify(on?'縦書きモード ON':'横書きモード ON','info');
+}
+
+// ============================================================
+// CUT POOL
+// ============================================================
+function cutToPool(){
+  const sel=window.getSelection();
+  if(!sel||sel.isCollapsed){notify('テキストを選択してください','info');return}
+  const text=sel.toString().trim();if(!text)return;
+  sel.deleteFromDocument();
+  const sc=getCurrentScene();if(sc)sc.content=document.getElementById('editor').innerText;
+  store.cutPool.unshift({id:genId(),text,date:new Date().toLocaleString('ja-JP')});
+  renderCutPool();updateWordCount();autoSave();
+  notify('没ネタプールに追加しました','success');
+}
+
+function renderCutPool(){
+  const c=document.getElementById('cut-items');
+  if(!store.cutPool.length){c.innerHTML='<div style="font-size:11px;color:var(--text-dim);padding:8px;text-align:center;">没ネタはまだありません</div>';return}
+  c.innerHTML=store.cutPool.map(it=>`
+    <div class="cut-item" onclick="restoreFromPool('${it.id}')" title="クリックで復元">
+      <div style="font-size:9px;color:var(--text-dim);margin-bottom:4px;">${it.date}</div>
+      ${esc(it.text.slice(0,120))}${it.text.length>120?'…':''}
+    </div>`).join('');
+}
+
+function restoreFromPool(id){
+  const it=store.cutPool.find(i=>i.id===id);if(!it)return;
+  const ed=document.getElementById('editor');ed.focus();
+  document.execCommand('insertText',false,it.text);
+  const sc=getCurrentScene();if(sc)sc.content=ed.innerText;
+  store.cutPool=store.cutPool.filter(i=>i.id!==id);
+  renderCutPool();autoSave();notify('テキストを復元しました','success');
+}
+
+// ============================================================
+// DATABASE
+// ============================================================
+let dbFilter='all';
+function filterDB(f){
+  dbFilter=f;
+  document.querySelectorAll('.db-filter-btn').forEach(b=>b.classList.toggle('active',b.dataset.filter===f));
+  renderDatabase();
+}
+
+function renderDatabase(){
+  const grid=document.getElementById('db-grid');
+  const list=dbFilter==='all'?store.entities:store.entities.filter(e=>e.type===dbFilter);
+  if(!list.length){grid.innerHTML='<div style="color:var(--text-dim);font-size:13px;padding:40px;grid-column:1/-1;text-align:center;">エンティティがありません。「新規追加」から登録してください。</div>';return}
+  grid.innerHTML=list.map(en=>`
+    <div class="entity-card" onclick="openEntityModal(null,'${en.id}')">
+      <div class="entity-card-type ${en.type}">${en.type==='character'?'キャラクター':en.type==='place'?'場所':'アイテム'}</div>
+      <div class="entity-card-name">${esc(en.name)}</div>
+      <div class="entity-card-desc">${esc(en.summary||'（概要未登録）')}</div>
+      ${en.tags?`<div class="entity-card-tags">${en.tags.split(',').map(t=>`<span class="entity-tag">${esc(t.trim())}</span>`).join('')}</div>`:''}
+    </div>`).join('');
+  renderInspectorChars();
+  document.getElementById('status-chars').textContent='キャラクター: '+store.entities.filter(e=>e.type==='character').length;
+}
+
+function renderInspectorChars(){
+  const list=document.getElementById('inspector-chars-list');
+  const chars=store.entities.filter(e=>e.type==='character');
+  list.innerHTML=chars.map(ch=>`
+    <div class="char-card" onclick="openEntityModal(null,'${ch.id}')">
+      <div class="char-avatar">${ch.name.slice(0,1)}</div>
+      <div class="char-info"><div class="char-name">${esc(ch.name)}</div><div class="char-role">${esc((ch.tags||'').split(',')[0]||'')}</div></div>
+    </div>`).join('')||'<div style="font-size:11px;color:var(--text-dim);text-align:center;padding:20px;">キャラクターがいません</div>';
+}
+
+// ============================================================
+// ENTITY MODAL
+// ============================================================
+function openEntityModal(defType,eid){
+  const db=document.getElementById('entity-delete-btn');
+  if(eid){
+    const en=store.entities.find(e=>e.id===eid);if(!en)return;
+    document.getElementById('entity-modal-title').textContent='エンティティを編集';
+    document.getElementById('entity-id').value=en.id;
+    document.getElementById('entity-type').value=en.type;
+    document.getElementById('entity-name').value=en.name;
+    document.getElementById('entity-aliases').value=en.aliases||'';
+    document.getElementById('entity-summary').value=en.summary||'';
+    document.getElementById('entity-detail').value=en.detail||'';
+    document.getElementById('entity-tags').value=en.tags||'';
+    db.style.display='block';
+  }else{
+    document.getElementById('entity-modal-title').textContent='新規エンティティ';
+    ['entity-id','entity-name','entity-aliases','entity-summary','entity-detail','entity-tags'].forEach(i=>document.getElementById(i).value='');
+    document.getElementById('entity-type').value=defType||'character';
+    db.style.display='none';
+  }
+  document.getElementById('entity-modal').classList.add('open');
+}
+
+function saveEntity(){
+  const id=document.getElementById('entity-id').value;
+  const data={
+    type:document.getElementById('entity-type').value,
+    name:document.getElementById('entity-name').value.trim(),
+    aliases:document.getElementById('entity-aliases').value.trim(),
+    summary:document.getElementById('entity-summary').value.trim(),
+    detail:document.getElementById('entity-detail').value.trim(),
+    tags:document.getElementById('entity-tags').value.trim(),
+  };
+  if(!data.name){notify('名前を入力してください','info');return}
+  if(id){
+    const en=store.entities.find(e=>e.id===id);
+    const old=en.name;
+    Object.assign(en,data);
+    if(old!==data.name){
+      const pfx=en.type==='character'?'@':'#';
+      store.chapters.forEach(ch=>ch.scenes.forEach(sc=>{
+        sc.content=(sc.content||'').replaceAll(`${pfx}${old}`,`${pfx}${data.name}`);
+      }));
+      const sc=getCurrentScene();
+      if(sc)document.getElementById('editor').innerHTML=renderEditorHTML(sc.content||'');
+      notify(`「${old}」→「${data.name}」一括置換しました`,'success');
+    }
+  }else{
+    store.entities.push({id:genId(),...data});
+  }
+  closeModal('entity-modal');renderDatabase();saveStore();notify('保存しました','success');
+}
+
+function deleteEntity(){
+  const id=document.getElementById('entity-id').value;if(!id)return;
+  if(!confirm('このエンティティを削除しますか？'))return;
+  store.entities=store.entities.filter(e=>e.id!==id);
+  closeModal('entity-modal');renderDatabase();saveStore();notify('削除しました','info');
+}
+
+// ============================================================
+// TIMELINE
+// ============================================================
+const TL_DAYS=10;
+
+function renderTimeline(){
+  const grid=document.getElementById('timeline-grid');
+  const chars=store.entities.filter(e=>e.type==='character');
+  const days=Array.from({length:TL_DAYS},(_,i)=>`${i+1}日目`);
+  let html=`<div class="timeline-axis-x">${days.map(d=>`<div class="tl-day">${d}</div>`).join('')}</div><div class="timeline-rows" id="tl-rows">`;
+  const allScenes=store.chapters.flatMap(ch=>ch.scenes.map(sc=>({...sc,chTitle:ch.title})));
+  chars.forEach(ch=>{
+    html+=`<div class="timeline-row" data-char="${ch.id}"><div class="tl-char-label">${esc(ch.name)}</div><div class="tl-cells">`;
+    for(let d=0;d<TL_DAYS;d++)html+=`<div class="tl-cell" data-day="${d}" ondragover="tlDragOver(event)" ondrop="tlDrop(event,'${ch.id}',${d})"></div>`;
+    html+=`</div></div>`;
+  });
+  html+=`<div class="timeline-row" data-char="__all"><div class="tl-char-label" style="color:var(--text-dim)">共通</div><div class="tl-cells">`;
+  for(let d=0;d<TL_DAYS;d++)html+=`<div class="tl-cell" data-day="${d}" ondragover="tlDragOver(event)" ondrop="tlDrop(event,'__all',${d})"></div>`;
+  html+=`</div></div></div><svg id="foreshadow-svg" style="width:${120+TL_DAYS*120}px;height:100%;position:absolute;top:0;left:0;pointer-events:none;"></svg>`;
+  grid.innerHTML=html;
+  placeSceneCards(allScenes,chars);
+  setTimeout(drawForeshadowLines,50);
+}
+
+function placeSceneCards(allScenes,chars){
+  allScenes.forEach(sc=>{
+    const card=document.createElement('div');
+    const fs=store.foreshadows.find(f=>f.fromSceneId===sc.id);
+    const fp=store.foreshadows.find(f=>f.toSceneId===sc.id);
+    card.className='scene-card'+(fs?' foreshadow':fp?' payoff':'');
+    card.dataset.sceneId=sc.id;card.draggable=true;
+    card.innerHTML=`<div class="scene-card-title">${esc(sc.title)}</div><div class="scene-card-ch">${esc(sc.chTitle||'')}</div>`;
+    card.addEventListener('dragstart',e=>e.dataTransfer.setData('sceneId',sc.id));
+    card.addEventListener('click',()=>selectScene(sc.id));
+    const day=parseDayNum(sc.datetime);
+    const cid=chars.find(c=>c.name===sc.pov)?.id||'__all';
+    const row=document.querySelector(`.timeline-row[data-char="${cid}"]`);
+    if(row){
+      const cell=row.querySelector(`.tl-cell[data-day="${day}"]`);
+      if(cell)cell.appendChild(card);else row.querySelector('.tl-cells').appendChild(card);
+    }
+  });
+}
+
+function parseDayNum(dt){
+  if(!dt)return 0;const m=dt.match(/(\d+)日/);
+  return m?Math.min(parseInt(m[1])-1,TL_DAYS-1):0;
+}
+
+function tlDragOver(e){e.preventDefault()}
+function tlDrop(e,cid,day){
+  e.preventDefault();
+  const sid=e.dataTransfer.getData('sceneId');
+  const sc=findScene(sid);if(!sc)return;
+  sc.datetime=`${day+1}日目`;
+  document.getElementById('scene-datetime').value=sc.datetime;
+  if(cid!=='__all'){const en=store.entities.find(x=>x.id===cid);if(en)sc.pov=en.name}
+  saveStore();renderTimeline();notify(`「${sc.title}」を${day+1}日目に移動`,'success');
+}
+
+function drawForeshadowLines(){
+  const svg=document.getElementById('foreshadow-svg');if(!svg)return;
+  svg.innerHTML='';
+  store.foreshadows.forEach(fs=>{
+    const fc=document.querySelector(`.scene-card[data-scene-id="${fs.fromSceneId}"]`);
+    const tc=document.querySelector(`.scene-card[data-scene-id="${fs.toSceneId}"]`);
+    if(!fc||!tc)return;
+    const gr=document.getElementById('timeline-grid').getBoundingClientRect();
+    const fr=fc.getBoundingClientRect(),tr=tc.getBoundingClientRect();
+    const x1=fr.right-gr.left,y1=fr.top+fr.height/2-gr.top;
+    const x2=tr.left-gr.left,y2=tr.top+tr.height/2-gr.top;
+    const mx=(x1+x2)/2;
+    const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d',`M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`);
+    path.setAttribute('stroke','#c9956c');path.setAttribute('stroke-width','1.5');
+    path.setAttribute('fill','none');path.setAttribute('stroke-dasharray','4,3');path.setAttribute('opacity','0.7');
+    svg.appendChild(path);
+    const lbl=document.createElementNS('http://www.w3.org/2000/svg','text');
+    lbl.setAttribute('x',mx);lbl.setAttribute('y',Math.min(y1,y2)-4);
+    lbl.setAttribute('text-anchor','middle');lbl.setAttribute('fill','#c9956c');lbl.setAttribute('font-size','9');
+    lbl.textContent=fs.label||'伏線';svg.appendChild(lbl);
+  });
+}
+
+// ============================================================
+// FORESHADOW
+// ============================================================
+function openForeshadowModal(){
+  const all=store.chapters.flatMap(ch=>ch.scenes);
+  const opts=all.map(sc=>`<option value="${sc.id}">${esc(sc.title)}</option>`).join('');
+  document.getElementById('fs-scene-from').innerHTML=opts;
+  document.getElementById('fs-scene-to').innerHTML=opts;
+  document.getElementById('fs-label').value='';
+  document.getElementById('foreshadow-modal').classList.add('open');
+}
+
+function addForeshadow(){
+  const fid=document.getElementById('fs-scene-from').value;
+  const tid=document.getElementById('fs-scene-to').value;
+  const lbl=document.getElementById('fs-label').value.trim();
+  if(fid===tid){notify('異なるシーンを選択してください','info');return}
+  store.foreshadows.push({id:genId(),fromSceneId:fid,toSceneId:tid,label:lbl});
+  closeModal('foreshadow-modal');saveStore();renderTimeline();notify('伏線を紐付けました','success');
+}
+
+// ============================================================
+// SNAPSHOT
+// ============================================================
+function openSaveModal(){
+  const all=store.chapters.flatMap(ch=>ch.scenes);
+  const words=all.reduce((a,sc)=>a+(sc.content||'').replace(/\s/g,'').length,0);
+  document.getElementById('snapshot-label').value='';
+  document.getElementById('snapshot-note').value='';
+  document.getElementById('snapshot-meta').innerHTML=`
+    <div class="snapshot-stat"><span class="snapshot-stat-key">総文字数</span><span class="snapshot-stat-val">${words.toLocaleString()} 文字</span></div>
+    <div class="snapshot-stat"><span class="snapshot-stat-key">章数</span><span class="snapshot-stat-val">${store.chapters.length}</span></div>
+    <div class="snapshot-stat"><span class="snapshot-stat-key">シーン数</span><span class="snapshot-stat-val">${all.length}</span></div>
+    <div class="snapshot-stat"><span class="snapshot-stat-key">キャラクター数</span><span class="snapshot-stat-val">${store.entities.filter(e=>e.type==='character').length}</span></div>`;
+  document.getElementById('save-modal').classList.add('open');
+}
+
+function saveSnapshot(){
+  const label=document.getElementById('snapshot-label').value.trim()||`バージョン ${store.snapshots.length+1}`;
+  const note=document.getElementById('snapshot-note').value.trim();
+  store.snapshots.unshift({id:genId(),label,note,date:new Date().toLocaleString('ja-JP'),
+    chapters:JSON.parse(JSON.stringify(store.chapters)),
+    entities:JSON.parse(JSON.stringify(store.entities))});
+  closeModal('save-modal');saveStore();
+  document.getElementById('status-versions').textContent='バージョン: '+store.snapshots.length;
+  notify(`「${label}」を保存しました`,'success');
+}
+
+// ============================================================
+// VERSION VIEW
+// ============================================================
+function renderVersionSidebar(){
+  const sb=document.getElementById('version-sidebar');
+  if(!store.snapshots.length){
+    sb.innerHTML='<div style="padding:20px;font-size:11px;color:var(--text-dim);text-align:center;">まだスナップショットがありません</div>';return;
+  }
+  sb.innerHTML='<div style="padding:10px 14px 6px;font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-dim);">保存済みバージョン</div>'+
+    store.snapshots.map((s,i)=>`
+      <div class="version-item ${i===0?'active':''}" onclick="showDiff('${s.id}',this)">
+        <div class="version-label">${esc(s.label)}</div>
+        <div class="version-date">${s.date}</div>
+        ${s.note?`<div class="version-note">${esc(s.note)}</div>`:''}
+      </div>`).join('');
+  if(store.snapshots.length)showDiff(store.snapshots[0].id,sb.querySelector('.version-item'));
+}
+
+function showDiff(snapId,el){
+  document.querySelectorAll('.version-item').forEach(i=>i.classList.remove('active'));
+  el.classList.add('active');
+  const snap=store.snapshots.find(s=>s.id===snapId);if(!snap)return;
+  const cur=store.chapters.flatMap(ch=>ch.scenes.map(sc=>sc.content||'')).join('\n\n');
+  const old=snap.chapters.flatMap(ch=>ch.scenes.map(sc=>sc.content||'')).join('\n\n');
+  document.getElementById('diff-panel').innerHTML=`
+    <div style="margin-bottom:20px;padding:10px 14px;background:var(--bg-raised);border-radius:4px;font-size:12px;">
+      <span style="color:var(--text-dim)">比較: </span>
+      <span style="color:#c9956c;font-weight:600">${esc(snap.label)}</span>
+      <span style="color:var(--text-dim)"> ↔ 現在のバージョン</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+      <div>
+        <div style="font-size:10px;color:#e06c6c;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">▶ ${esc(snap.label)}</div>
+        <div style="white-space:pre-wrap;font-size:13px;line-height:2;color:var(--text-muted)">${renderDiff(old,cur,'old')}</div>
+      </div>
+      <div>
+        <div style="font-size:10px;color:#5cb88a;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">▶ 現在</div>
+        <div style="white-space:pre-wrap;font-size:13px;line-height:2;color:var(--text-parchment)">${renderDiff(old,cur,'new')}</div>
+      </div>
+    </div>`;
+}
+
+function renderDiff(oldT,newT,side){
+  const os=new Set(oldT.split(/(\s+)/));
+  const ns=new Set(newT.split(/(\s+)/));
+  if(side==='old')return esc(oldT).split(/(\S+)/).map(w=>!ns.has(w)&&w.trim()?`<span class="diff-del">${w}</span>`:w).join('');
+  return esc(newT).split(/(\S+)/).map(w=>!os.has(w)&&w.trim()?`<span class="diff-add">${w}</span>`:w).join('');
+}
+
+// ============================================================
+// INSPECTOR
+// ============================================================
+function switchInspector(tab){
+  document.querySelectorAll('.insp-tab').forEach(t=>t.classList.toggle('active',t.dataset.insp===tab));
+  document.querySelectorAll('.inspector-body').forEach(b=>b.classList.remove('active'));
+  document.getElementById('insp-'+tab).classList.add('active');
+  if(tab==='chars')renderInspectorChars();
+  if(tab==='pool')renderCutPool();
+}
+
+// ============================================================
+// MODALS
+// ============================================================
+function closeModal(id){document.getElementById(id).classList.remove('open')}
+document.querySelectorAll('.modal-overlay').forEach(o=>{
+  o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open')});
+});
+
+// ============================================================
+// NOTIFICATIONS
+// ============================================================
+function notify(msg,type='info'){
+  const el=document.createElement('div');
+  el.className=`notif ${type}`;el.textContent=msg;
+  document.getElementById('notifications').appendChild(el);
+  setTimeout(()=>el.remove(),2800);
+}
+
+// ============================================================
+// UTIL
+// ============================================================
+function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+
+// ============================================================
+// INIT
+// ============================================================
+loadStore();
+renderTree();
+renderDatabase();
+renderCutPool();
+renderVersionSidebar();
+if(store.currentSceneId){selectScene(store.currentSceneId)}
+else if(store.chapters[0]?.scenes[0]){selectScene(store.chapters[0].scenes[0].id)}
+document.getElementById('status-versions').textContent='バージョン: '+store.snapshots.length;
+document.getElementById('status-chars').textContent='キャラクター: '+store.entities.filter(e=>e.type==='character').length;
+notify('NovelForge へようこそ！','success');
+</script>
+</body>
+</html>
+HTMLEOF
+echo "完了: $(wc -c < /mnt/user-data/outputs/index.html) bytes"
